@@ -9,7 +9,7 @@ public class Ciphers {
 	
 	public static int letterToNum(char input) {
 		for(int i = 0; i < 26; i++){
-			if (alphabet[i] == input) {
+			if (alphabet[i] == Character.toLowerCase(input)) {
 				return (i+1);
 			}
 		}
@@ -60,8 +60,8 @@ public class Ciphers {
 	}
 
 	public static void main(String[] args) {
-		String input = args[0];
-		char[] inputArray = input.toCharArray();
+		//String input = args[0];
+		//char[] inputArray = input.toCharArray();
 		
 		//System.out.println(letterToNum(inputArray[0]));
 		
@@ -82,8 +82,12 @@ public class Ciphers {
 		//System.out.println(caesarShiftDecrypt(cipherText, 1));
 		
 		// Testing Vigenere Encryption
-		System.out.println(input);
-		String cipherText = 
+		// Using the example from wikipedia
+		String test_case = "ATTACKATDAWN";
+		String test_key = "LEMON";
+		System.out.println(test_case);
+		String cipherText = vigenereEncrypt(test_case, test_key);
+		System.out.println(cipherText);
 		
 	}
 
