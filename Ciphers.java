@@ -18,6 +18,9 @@ public class Ciphers {
 	
 	public static char numToLetter(int input) {
 		int index = (input - 1) % 26;
+		while (index < 0) {
+			index += 26;
+		}
 		return alphabet[index];
 	}
 
@@ -59,6 +62,24 @@ public class Ciphers {
 		return rv;
 	}
 
+	public static String vigenereDecrypt(String input, String key) {
+		char[] arrayIn = input.toCharArray();
+		char[] keyArray = key.toCharArray();
+		int n = arrayIn.length;
+		int key_length = keyArray.length;
+		char[] arrayOut = new char[n];
+		int shift_amount = 0;
+		for (int i = 0; i < n; i++) {
+			// Note the 'minus one'; 
+			// this is to match the convention that a shift of 'A' in the key leads to 'no change'
+			shift_amount = letterToNum(keyArray[i % key_length]) - 1;
+			arrayOut[i] = caesarShiftChar(arrayIn[i], (-1) * shift_amount);
+		}
+		String rv = new String(arrayOut);
+		return rv;
+	}
+
+
 	public static void main(String[] args) {
 		//String input = args[0];
 		//char[] inputArray = input.toCharArray();
@@ -83,12 +104,21 @@ public class Ciphers {
 		
 		// Testing Vigenere Encryption
 		// Using the example from wikipedia
+		/* 
 		String test_case = "ATTACKATDAWN";
 		String test_key = "LEMON";
 		System.out.println(test_case);
 		String cipherText = vigenereEncrypt(test_case, test_key);
 		System.out.println(cipherText);
+		*/
 		
+		// Testing Vigenere Decryption, same case as above
+		String test_case = "ATTACKATDAWN";
+		String test_key = "LEMON";
+		String cipherText = vigenereEncrypt(test_case, test_key);
+		System.out.println(cipherText);
+		String plainText = vigenereDecrypt(cipherText, test_key);
+		System.out.println(plainText);
 	}
 
 }
