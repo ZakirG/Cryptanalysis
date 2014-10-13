@@ -117,6 +117,47 @@ public class Ciphers {
 		return rv;
 	}
 	
+	// Crack Caesar cipher using (naive) frequency analysis
+	// Takes a char array instead of a String (for convenience of use by the vigenere function)
+	public static void caesarCrack(char[] arrayIn) {
+		int n = arrayIn.length;
+		
+		// Step one: find frequencies of letters in input
+		int[] charCounts = new int[26];
+		double[] charFrequencies = new double[26];
+		
+		for(char letter : arrayIn) {
+			charCounts[letterToNum(letter) - 1] += 1;
+		}
+		
+		for(int i = 0; i < 26; i++) {
+			charFrequencies[i] = (charCounts[i] / (double)n);
+		}
+		// Now we have frequencies of each letter in the input
+		
+		// Naive guessing method: Find the most frequent letter and assume it is E
+		double max = 0;
+		int max_char = 0;
+		for (int i = 0; i < 26; i++) {
+			if(max < charFrequencies[i]) {
+				max = charFrequencies[i];
+				max_char = i;
+			}
+		}
+		
+		int shift_hypothesis_one = Math.abs((max_char + 1) - letterToNum('e'));
+		
+		System.out.println("Shift hypothesis one: shift of " + shift_hypothesis_one);
+		System.out.print("Interpretation of text using this hypothesis: ");
+		// Decrypt first 30 characters (or all the text, if shorter than 30 characters)
+		int upper_bound = Math.min(30, n);
+		for(int i = 0; i < upper_bound; i++) {
+			System.out.print(caesarShiftChar(arrayIn[i], (-1)*shift_hypothesis_one));
+		}
+		System.out.println();
+		//for (double x: charFrequencies) System.out.print(x + "; ");
+	}
+	
 	// Returns list of hypotheses for key length by seeking repetitions of letter sequences
 	public static List<Integer> kasiskiExamine(String input, int minimum_match_length) {
 		// The return value
@@ -176,46 +217,7 @@ public class Ciphers {
 		return key_hypotheses;
 	}
 	
-	// Crack Caesar cipher using (naive) frequency analysis
-	// Takes a char array instead of a String (for convenience of use by the vigenere function)
-	public static void caesarCrack(char[] arrayIn) {
-		int n = arrayIn.length;
-		
-		// Step one: find frequencies of letters in input
-		int[] charCounts = new int[26];
-		double[] charFrequencies = new double[26];
-		
-		for(char letter : arrayIn) {
-			charCounts[letterToNum(letter) - 1] += 1;
-		}
-		
-		for(int i = 0; i < 26; i++) {
-			charFrequencies[i] = (charCounts[i] / (double)n);
-		}
-		// Now we have frequencies of each letter in the input
-		
-		// Naive guessing method: Find the most frequent letter and assume it is E
-		double max = 0;
-		int max_char = 0;
-		for (int i = 0; i < 26; i++) {
-			if(max < charFrequencies[i]) {
-				max = charFrequencies[i];
-				max_char = i;
-			}
-		}
-		
-		int shift_hypothesis_one = Math.abs((max_char + 1) - letterToNum('e'));
-		
-		System.out.println("Shift hypothesis one: shift of " + shift_hypothesis_one);
-		System.out.print("Interpretation of text using this hypothesis: ");
-		// Decrypt first 30 characters (or all the text, if shorter than 30 characters)
-		int upper_bound = Math.min(30, n);
-		for(int i = 0; i < upper_bound; i++) {
-			System.out.print(caesarShiftChar(arrayIn[i], (-1)*shift_hypothesis_one));
-		}
-		System.out.println();
-		//for (double x: charFrequencies) System.out.print(x + "; ");
-	}
+	
 	
 	/*
 	public static vigenereCrack(String input, int key_length) {
