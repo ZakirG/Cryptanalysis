@@ -373,40 +373,16 @@ public class Ciphers {
 			System.exit(0);
 		}
 		vigenerePlainText = vigenerePlainText.replace("\n", "").replace("\r", "");
-		String vigenereCipherText = vigenereEncrypt(vigenerePlainText, "surveil");
-		System.out.println("Variance attack gives key length of: " + vigenereVarianceAttack(vigenereCipherText, 20));
+		String vigenereCipherText = vigenereEncrypt(vigenerePlainText, "abcdefg");
+		
+		// Now crack it!
+		int key_length_cracked = vigenereVarianceAttack(vigenereCipherText, 10);
+		System.out.println("Variance attack gives key length of: " + key_length_cracked);
 		//kasiskiExamine(vigenereCipherText, 6);
-		//String key = vigenereCrack(vigenereCipherText, 7);
-		//System.out.println(vigenereDecrypt(vigenereCipherText, key));
+		String key = vigenereCrack(vigenereCipherText, 7);
 		
 		
-		/*	
-		String problem2Text = null;
-		try {
-			problem2Text = readFile("problem2Text.txt");
-		}
-		catch (IOException e) {
-			System.out.println("Error: " + e);
-			System.exit(0);
-		}
-		problem2Text = problem2Text.replace("\n", "").replace("\r", "");
-		*/
-		
-		
-		/*
-		String cipher1 = vigenereEncrypt(problem2Text, "uvwxyz");
-		double[] p2array = letterFreqArray(cipher1);
-		double sum = 0;
-		for(double x : p2array) sum += x; 
-		System.out.println("Sum: " + sum);
-		
-		
-		System.out.println("Mean variance for length = 2:  " + vigenereMeanVariance(cipher1, 2));
-		System.out.println("Mean variance for length = 3:  " + vigenereMeanVariance(cipher1, 3));
-		System.out.println("Mean variance for length = 4:  " + vigenereMeanVariance(cipher1, 4));
-		System.out.println("Mean variance for length = 5:  " + vigenereMeanVariance(cipher1, 5));
-		System.out.println("Mean variance for length = 6:  " + vigenereMeanVariance(cipher1, 6));
-		*/
+
 		
 		
 		
