@@ -61,7 +61,49 @@ public class Ciphers {
 	public static double frequencyOfChar(char input) {
 		return frequencyArray[letterToNum(input)];
 	}
-
+	
+	// Returns population variance of array
+	public static double populationVariance(double[] arrayIn) {
+		double var = 0;
+		int n = arrayIn.length;
+		double sum = 0.0;
+		for(double x : arrayIn) sum += x;
+		double mean = sum / ((double)n);
+		
+		double variance = 0.0;
+		for(double x: arrayIn) variance += Math.pow(x - mean, 2);
+		variance = variance / ((double) n);
+		return variance;
+		
+	}
+	
+	// Returns array of frequencies of each letter in the input array
+	public static double[] letterFreqArray(char[] arrayIn) {
+		int n = arrayIn.length;
+		// Step one: find frequencies of letters in input
+		int[] charCounts = new int[26];
+		double[] charFrequencies = new double[26];
+		
+		int z = 0;
+		for(char letter : arrayIn) {
+			if ((z = letterToNum(letter)) != -1) {
+				charCounts[z - 1] += 1;
+			}
+		}
+		
+		for(int i = 0; i < 26; i++) {
+			charFrequencies[i] = (charCounts[i] / (double)n);
+		}
+		
+		return charFrequencies;
+	}
+	
+	// Overload of above function
+	public static double[] letterFreqArray(String input) {
+		char[] arrayIn = input.toCharArray();
+		return letterFreqArray(arrayIn);
+	}
+	
 	public static char caesarShiftChar(char input, int shift_amount) {
 		int num_in = letterToNum(input);
 		return numToLetter(shift_amount + num_in);
@@ -117,45 +159,83 @@ public class Ciphers {
 		return rv;
 	}
 	
-	// Crack Caesar cipher using (naive) frequency analysis
-	// Takes a char array instead of a String (for convenience of use by the vigenere function)
-	public static void caesarCrack(char[] arrayIn) {
+	// Small helper function: gives index of largest element in array
+	public static int maxInArray(int[] arrayIn) {
+		int max = 0;
+		int max_pos = 0;
 		int n = arrayIn.length;
-		
-		// Step one: find frequencies of letters in input
-		int[] charCounts = new int[26];
-		double[] charFrequencies = new double[26];
-		
-		for(char letter : arrayIn) {
-			charCounts[letterToNum(letter) - 1] += 1;
-		}
-		
-		for(int i = 0; i < 26; i++) {
-			charFrequencies[i] = (charCounts[i] / (double)n);
-		}
-		// Now we have frequencies of each letter in the input
-		
-		// Naive guessing method: Find the most frequent letter and assume it is E
-		double max = 0;
-		int max_char = 0;
-		for (int i = 0; i < 26; i++) {
-			if(max < charFrequencies[i]) {
-				max = charFrequencies[i];
-				max_char = i;
+		int i = 0;
+		for( ; i < n; i++) {
+			if(max < arrayIn[i]) {
+				max = arrayIn[i];
+				max_pos = i;
 			}
 		}
-		
-		int shift_hypothesis_one = Math.abs((max_char + 1) - letterToNum('e'));
-		
-		System.out.println("Shift hypothesis one: shift of " + shift_hypothesis_one);
-		System.out.print("Interpretation of text using this hypothesis: ");
-		// Decrypt first 30 characters (or all the text, if shorter than 30 characters)
-		int upper_bound = Math.min(30, n);
-		for(int i = 0; i < upper_bound; i++) {
-			System.out.print(caesarShiftChar(arrayIn[i], (-1)*shift_hypothesis_one));
+		return max_pos;
+	}
+	
+	// Overload of above, for doubles
+	public static int maxInArray(double[] arrayIn) {
+		double max = 0;
+		int max_pos = 0;
+		int n = arrayIn.length;
+		int i = 0;
+		for( ; i < n; i++) {
+			if(max < arrayIn[i]) {
+				max = arrayIn[i];
+				max_pos = i;
+			}
 		}
-		System.out.println();
-		//for (double x: charFrequencies) System.out.print(x + "; ");
+		return max_pos;
+	}
+	
+	// Crack Caesar cipher using frequency analysis; attempts to minimize distance between frequency arrays
+	// Takes a char array instead of a String (for convenience of use by the vigenere function)
+	public static int caesarCrack(char[] arrayIn) {
+
+		int n = arrayIn.length;
+		// Step one: find frequencies of letters in input
+		
+		double[] charFrequencies = letterFreqArray(arrayIn);
+		// Now we have frequencies of each letter in the input
+		
+		double[] fArrayCopy = new double[frequencyArray.length];
+		for(int i = 0; i < 26; i++) fArrayCopy[i] = frequencyArray[i];
+		
+		int best_shift = 0;
+		double least_deviation = 100.0;
+		
+		int max_char = maxInArray(charFrequencies);
+		for(int iterations = 0; iterations < 26; iterations++) {
+			
+			int max_charf = maxInArray(fArrayCopy);
+			//System.out.println("On: " + numToLetter(max_charf + 1));
+			int shift_hypothesis = Math.abs((max_char + 1) - (max_charf + 1));
+			double sum_of_deviation = 0.0;
+			for(int i = 0; i < 26; i++) { 
+				// cipherFreq: frequency of (decrypted)letter in cipher text
+				double cipherFreq = charFrequencies[i]; 
+				// englishFreq: frequency of this letter (when decrypted using the current rule) in English language
+				double englishFreq = fArrayCopy[letterToNum(caesarShiftChar(numToLetter(i + 1) , (-1)*shift_hypothesis)) - 1];
+				double deviation = (Math.abs(cipherFreq - englishFreq));
+				sum_of_deviation += deviation;
+			}
+			sum_of_deviation = Math.sqrt(sum_of_deviation);
+			//System.out.println("Shift of " + shift_hypothesis + " yields deviation: " + sum_of_deviation);
+			if (least_deviation > sum_of_deviation) {
+				least_deviation = sum_of_deviation;
+				best_shift = shift_hypothesis;
+			}
+			fArrayCopy[max_charf] = 0; 	// Ensures that we go down through the most common letters -- E, T, so on
+		}
+		
+		return best_shift;
+	}
+	
+	// Overload of above function
+	public static int caesarCrack(String input) {
+		char[] arrayIn = input.toCharArray();
+		return caesarCrack(arrayIn);
 	}
 	
 	// Returns list of hypotheses for key length by seeking repetitions of letter sequences
@@ -168,7 +248,7 @@ public class Ciphers {
 		// Step one: find repetitions in the text of length greater than 3
 		char[] arrayIn = input.toCharArray();
 		int n = arrayIn.length;
-		System.out.println("n = " + n);
+
 		// If the first m characters of input 2 matches input 1, save n
 		// i iterates over arrayIn
 		for (int i = 0; i < n; i++) {
@@ -193,9 +273,9 @@ public class Ciphers {
 					}
 					if (num_matches >= minimum_match_length) {
 						 // Note that we're printing i instead of k
-						System.out.println(num_matches + " matches at i = " + i + ", j = " + j);
+						//System.out.println(num_matches + " matches at i = " + i + ", j = " + j);
 						String tmpString = new String(tmpArray);
-						System.out.println("Match string: " + tmpString);
+						//System.out.println("Match string: " + tmpString);
 						Integer tmpInt = new Integer(Math.abs(i - j));
 						repetition_dict.put(tmpString, tmpInt);
 						key_hypotheses.add(tmpInt);
@@ -217,90 +297,116 @@ public class Ciphers {
 		return key_hypotheses;
 	}
 	
-	
-	
-	/*
-	public static vigenereCrack(String input, int key_length) {
-		char[] arrayIn = input.toCharArray();
-		int n = arrayIn.length;
-		for(int i = 0; i < key_length; i++) {
-			for(int j = 0; j < n; j += key_length) {
-				arrayIn[]
-			}
-		}		
-		
-	}
+	/* 	
+	* 	Treats input as <key_length> number of parallel ciphers; finds variances for each of these ciphers, then returns the mean
+	* 	Idea is that the correct key length will yield caesar ciphers, which have pop var. close to that of English
+	* 	So this one number is a metric for how well the key_length fits a cipher to English
+	* 	This serves as an alternative to the Kasiski Examination 
 	*/
+	public static double vigenereMeanVariance(String input, int key_length) {
+		char[] arrayIn = input.toCharArray();
+		double meanVariance = 0.0;
+		int n = arrayIn.length;
+		int caesarArrayLength = (n / key_length) + (key_length - 1);
+		for(int i = 0; i < key_length; i++) {
+			char[] caesarArray = new char[caesarArrayLength];
+			int z = 0;
+			for(int j = i; j < n; j += key_length) {
+				caesarArray[z] = arrayIn[j];
+				z++;
+			}
+			double caesarVar = populationVariance(letterFreqArray(caesarArray));
+			meanVariance += caesarVar;
+		}		
+		meanVariance = (meanVariance / ((double)key_length));
+		return meanVariance;	
+	}
+	
+	// Returns key length guess which brings cipher text's mean variance closest to English letters' population variance
+	// The return value will likely be the key length or a multiple of the key length.
+	public static int vigenereVarianceAttack(String input, int upper_bound) {
+		double min_diff = 1000.0;	// The minimum difference between cipher text mean variance and English population variance
+		int best_key_length = -1;
+		double englishPopVariance = populationVariance(frequencyArray);
+		for(int key_length_guess = 1; key_length_guess < upper_bound; key_length_guess++) {
+			double dist = Math.abs(vigenereMeanVariance(input, key_length_guess) - englishPopVariance);
+			if (dist < min_diff) {
+				min_diff = dist;
+				best_key_length = key_length_guess;
+			}
+		}
+		return best_key_length;
+	}
+	
+	// Treats input as a <key_length> number of parallel caesar ciphers, then uses caesarCrack function
+	public static String vigenereCrack(String input, int key_length) {
+		char[] arrayIn = input.toCharArray();
+		char[] keyArray = new char[key_length];
+		int n = arrayIn.length;
+		int caesarArrayLength = (n / key_length) + (key_length - 1);
+		for(int i = 0; i < key_length; i++) {
+			char[] caesarArray = new char[caesarArrayLength];
+			int z = 0;
+			for(int j = i; j < n; j += key_length) {
+				caesarArray[z] = arrayIn[j];
+				z++;
+			}
+			int caesarKey = caesarCrack(caesarArray);
+			keyArray[i] = numToLetter(caesarKey + 1);
+			
+		}		
+		String keyString = new String(keyArray);
+		System.out.println("Key hypothesis: " + keyString);
+		return keyString;
+	}
 	
 	public static void main(String[] args) {
-		//String input = args[0];
-		//char[] inputArray = input.toCharArray();
 		
-		//System.out.println(letterToNum(inputArray[0]));
+		// Testing vigenereCrack
 		
-		//int input_num = Integer.parseInt(args[0]);
-		//System.out.println(input_num);
-		//System.out.println(numToLetter(input_num));
+		String vigenerePlainText = null;
+		try {
+			vigenerePlainText = readFile("vigenereSampleText.txt");
+		}
+		catch (IOException e) {
+			System.out.println("Error: " + e);
+			System.exit(0);
+		}
+		vigenerePlainText = vigenerePlainText.replace("\n", "").replace("\r", "");
+		String vigenereCipherText = vigenereEncrypt(vigenerePlainText, "surveil");
+		System.out.println("Variance attack gives key length of: " + vigenereVarianceAttack(vigenereCipherText, 20));
+		//kasiskiExamine(vigenereCipherText, 6);
+		//String key = vigenereCrack(vigenereCipherText, 7);
+		//System.out.println(vigenereDecrypt(vigenereCipherText, key));
 		
-		//Testing Caesar Shift (Char)
-		//System.out.println(inputArray[0]);
-		//System.out.println(caesarShift(inputArray[0], 1));
-		//System.out.println(caesarShift(inputArray[0], 2));
-		//System.out.println(caesarShift(inputArray[0], 52));
 		
-		// Testing Caesar Shift (String)
-		//System.out.println(input);
-		//String cipherText = caesarShift(input, 1);
-		//System.out.println(cipherText);
-		//System.out.println(caesarShiftDecrypt(cipherText, 1));
-		
-		// Testing Vigenere Encryption
-		// Using the example from wikipedia
-		/* 
-		String test_case = "ATTACKATDAWN";
-		String test_key = "LEMON";
-		System.out.println(test_case);
-		String cipherText = vigenereEncrypt(test_case, test_key);
-		System.out.println(cipherText);
+		/*	
+		String problem2Text = null;
+		try {
+			problem2Text = readFile("problem2Text.txt");
+		}
+		catch (IOException e) {
+			System.out.println("Error: " + e);
+			System.exit(0);
+		}
+		problem2Text = problem2Text.replace("\n", "").replace("\r", "");
 		*/
 		
-		// Testing Vigenere Decryption, same case as above
+		
 		/*
-		String test_case = "ATTACKATDAWN";
-		String test_key = "LEMON";
-		String cipherText = vigenereEncrypt(test_case, test_key);
-		System.out.println(cipherText);
-		String plainText = vigenereDecrypt(cipherText, test_key);
-		System.out.println(plainText);
+		String cipher1 = vigenereEncrypt(problem2Text, "uvwxyz");
+		double[] p2array = letterFreqArray(cipher1);
+		double sum = 0;
+		for(double x : p2array) sum += x; 
+		System.out.println("Sum: " + sum);
+		
+		
+		System.out.println("Mean variance for length = 2:  " + vigenereMeanVariance(cipher1, 2));
+		System.out.println("Mean variance for length = 3:  " + vigenereMeanVariance(cipher1, 3));
+		System.out.println("Mean variance for length = 4:  " + vigenereMeanVariance(cipher1, 4));
+		System.out.println("Mean variance for length = 5:  " + vigenereMeanVariance(cipher1, 5));
+		System.out.println("Mean variance for length = 6:  " + vigenereMeanVariance(cipher1, 6));
 		*/
-		
-		// Testing file reader function
-		String cipherFileText = null; 
-		try {
-			cipherFileText = readFile("vigenereCipherText.txt");
-			cipherFileText = cipherFileText.replace("\n", "");
-		}
-		catch (IOException e) {
-			System.out.println("Error: " + e);
-			System.exit(0);
-		}
-		
-		// Testing Kasiski reader with min match length = 6
-		// Running this function on the example cipher implies that the key length is 7, due to common factors
-		//kasiskiExamine(cipherFileText, 6);
-		
-		// Testing caesarCrack
-		String caesarPlainText = null;
-		try {
-			caesarPlainText = readFile("caesarSampleText.txt");
-		}
-		catch (IOException e) {
-			System.out.println("Error: " + e);
-			System.exit(0);
-		}
-		String caesarCipherText = caesarShift(caesarPlainText, 15);
-		char[] arrayTmp = caesarCipherText.toCharArray();
-		caesarCrack(arrayTmp);
 		
 		
 		
